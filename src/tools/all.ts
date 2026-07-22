@@ -39,13 +39,16 @@ export function filterTimeframesForRequest(
   );
 }
 
-async function snap(input: { maxAgeMs?: number }) {
+async function snap(input: { maxAgeMs?: number }, options: { enrichTimeframes?: boolean } = {}) {
   const env = getEnv();
   const max = input.maxAgeMs ?? env.MAX_ACCEPTABLE_DATA_AGE_MS;
   const r = await fetchMarketData(max);
   const snapshot = normalize(r.payload, r.meta, max);
   const snapshotTimeframes = snapshot.timeframes as Record<string, { status?: string }>;
-  if (Object.values(snapshotTimeframes).some((section) => section.status === "unavailable")) {
+  if (
+    options.enrichTimeframes &&
+    Object.values(snapshotTimeframes).some((section) => section.status === "unavailable")
+  ) {
     const fallback = await fetchBinanceTimeframeFallback(max);
     return mergeBinanceTimeframeFallback(snapshot, fallback);
   }
@@ -67,7 +70,7 @@ export const tools: ToolDefinition[] = [
       strict: z.boolean().default(false),
     },
     run: async (i: Record<string, unknown>) => {
-      const s = await snap(i);
+      const s = await snap(i, { enrichTimeframes: true });
       return toolResult(s, getEnv().MAX_TOOL_RESULT_BYTES);
     },
   },
@@ -82,7 +85,7 @@ export const tools: ToolDefinition[] = [
       maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
     },
     run: async (i: Record<string, unknown>) => {
-      const s = await snap(i);
+      const s = await snap(i, { enrichTimeframes: true });
       return toolResult(
         {
           asOf: s.asOf,
@@ -167,7 +170,7 @@ export const tools: ToolDefinition[] = [
       maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
     },
     run: async (i: Record<string, unknown>) => {
-      const s = await snap(i);
+      const s = await snap(i, { enrichTimeframes: true });
       const data = {
         asOf: s.asOf,
         market: "BTC",

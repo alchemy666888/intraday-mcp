@@ -248,11 +248,18 @@ export function mergeBinanceTimeframeFallback<
   const timeframesOut = Object.fromEntries(
     timeframes.map((timeframe) => {
       const fallbackSection = fallback.timeframes[timeframe];
+      const timeframeDiagnostics = diagnostics.filter((diagnostic) =>
+        diagnostic.startsWith(`${timeframe} `),
+      );
+      const timeframeFallbackWarning =
+        timeframeDiagnostics.length > 0
+          ? `Binance USD-M direct kline fallback diagnostics: ${timeframeDiagnostics.join(" | ")}`
+          : null;
       if (fallbackSection && !sectionPresent(existing[timeframe])) {
         return [timeframe, fallbackSection];
       }
 
-      if (!sectionPresent(existing[timeframe]) && fallbackWarning) {
+      if (!sectionPresent(existing[timeframe]) && timeframeFallbackWarning) {
         return [
           timeframe,
           {
@@ -263,7 +270,7 @@ export function mergeBinanceTimeframeFallback<
                 : existing[timeframe]?.reason,
             warnings: uniq([
               ...((existing[timeframe]?.warnings as string[] | undefined) ?? []),
-              fallbackWarning,
+              timeframeFallbackWarning,
             ]),
           },
         ];
