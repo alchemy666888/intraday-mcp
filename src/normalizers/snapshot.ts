@@ -40,8 +40,28 @@ const meta = (
     warnings,
   };
 };
+const hasTimeframeKeys = (o: Obj) => tfs.some((tf) => Object.keys(obj(o[tf])).length > 0);
+const firstTimeframeRoot = (...roots: Obj[]) => {
+  const candidates = roots.flatMap((root) => [
+    obj(root.timeframes),
+    obj(root.binanceTimeframes),
+    obj(root.binanceUsdMTimeframes),
+    obj(root.binanceFuturesTimeframes),
+    obj(root.binanceKlines),
+    obj(root.klines),
+    obj(root.candles),
+    obj(obj(root.binance).timeframes),
+    obj(obj(root.binanceUsdM).timeframes),
+    obj(obj(root.binanceFutures).timeframes),
+    obj(obj(root.binance).klines),
+    obj(obj(root.binanceUsdM).klines),
+    obj(obj(root.binanceFutures).klines),
+  ]);
+  return candidates.find(hasTimeframeKeys) ?? {};
+};
 export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
   const receivedAt = fm.receivedAt;
+  const root = obj(up);
   const btc = obj(up.btcIntraday);
   const enriched = !!up.btcIntraday;
   const asOf = validIso(btc.asOf) ?? validIso(up.timestamp) ?? receivedAt;
@@ -50,7 +70,7 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
     warnings.push("btcIntraday enriched profile is absent; enriched metrics are unavailable");
   if (fm.cacheStatus === "stale-if-error")
     warnings.push("served from stale ephemeral cache after upstream error");
-  const tfRoot = obj(btc.timeframes);
+  const tfRoot = firstTimeframeRoot(btc, root);
   const timeframes: object = Object.fromEntries(
     tfs.map((tf) => {
       const o = obj(tfRoot[tf]);

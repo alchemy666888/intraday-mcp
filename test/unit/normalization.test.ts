@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { normalize } from "../../src/normalizers/snapshot.ts";
 
-const fetchMeta = {
 type NormalizedTimeframes = Record<
   string,
   {
@@ -29,7 +28,6 @@ const meta = {
 test("legacy upstream returns partial with unavailable enriched sections", () => {
   const snapshot = normalize(
     { timestamp: "2026-07-22T00:00:00.000Z", source: "hyperliquid", status: "success" },
-    fetchMeta,
     meta,
     120000,
   );
@@ -48,13 +46,13 @@ test("btcIntraday without every enriched section reports partial-enriched comple
         perpetual: { markPriceUsd: 100000 },
       },
     },
-    fetchMeta,
+    meta,
     120000,
   );
 
   assert.equal(snapshot.status, "fresh");
   assert.equal(snapshot.quality.completeness, "partial-enriched");
-  assert.equal(snapshot.timeframes["5m"].status, "missing");
+  assert.equal(tframe(snapshot)["5m"].status, "missing");
   assert.equal(snapshot.perpetual.status, "fresh");
   assert.equal(snapshot.options.status, "missing");
 });
@@ -71,7 +69,7 @@ test("btcIntraday with all enriched sections reports enriched completeness", () 
         options: { expiries: [{ expiration: "2026-07-31", atmIvPct: 50 }] },
       },
     },
-    fetchMeta,
+    meta,
     120000,
   );
 
@@ -85,14 +83,6 @@ test("perpetual derived fields are deterministic", () => {
       btcIntraday: {
         asOf: "2026-07-22T00:00:00.000Z",
         perpetual: { markPriceUsd: 100000, fundingRateHourly: "0.00001", openInterestBtc: 2 },
-      },
-    },
-    fetchMeta,
-        perpetual: {
-          markPriceUsd: 100000,
-          fundingRateHourly: "0.00001",
-          openInterestBtc: 2,
-        },
       },
     },
     meta,
@@ -145,6 +135,34 @@ test("enriched upstream normalizes populated btcIntraday.timeframes", () => {
   assert.equal(timeframes["15m"].tradeCount, 84);
   assert.equal(timeframes["1h"].baseVolumeBtc, 30);
   assert.equal(timeframes["1h"].vwapUsd, 101000);
+});
+
+test("enriched upstream normalizes nested Binance timeframe roots", () => {
+  const snapshot = normalize(
+    {
+      timestamp: "2026-07-22T00:00:00.000Z",
+      btcIntraday: {
+        asOf: "2026-07-22T00:00:00.000Z",
+        binance: {
+          timeframes: {
+            "5m": { baseVolumeBtc: 3, quoteVolumeUsd: 300000, tradeCount: 9 },
+            "15m": { baseVolumeBtc: 4, quoteVolumeUsd: 440000 },
+            "1h": { baseVolumeBtc: 5, quoteVolumeUsd: 550000 },
+          },
+        },
+      },
+    },
+    meta,
+    120000,
+  );
+
+  const timeframes = tframe(snapshot);
+
+  assert.equal(timeframes["5m"].status, "fresh");
+  assert.equal(timeframes["5m"].reason, null);
+  assert.equal(timeframes["5m"].vwapUsd, 100000);
+  assert.equal(timeframes["15m"].vwapUsd, 110000);
+  assert.equal(timeframes["1h"].vwapUsd, 110000);
 });
 
 test("enriched upstream with missing btcIntraday.timeframes marks windows unavailable", () => {
