@@ -1,0 +1,2 @@
+import crypto from "node:crypto"; import { getEnv } from "@/config/env";
+export function authorize(req:Request): Response|null { const env=getEnv(); if(env.AUTH_MODE==="none") return null; const h=req.headers.get("authorization")??""; const token=h.startsWith("Bearer ")?h.slice(7):""; const expected=env.MCP_BEARER_TOKEN??""; const a=Buffer.from(token); const b=Buffer.from(expected); if(a.length!==b.length || !crypto.timingSafeEqual(a,b)) return new Response(JSON.stringify({error:"unauthorized"}),{status:401,headers:{"content-type":"application/json"}}); return null; }
