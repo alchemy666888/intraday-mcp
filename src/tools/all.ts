@@ -6,6 +6,8 @@ import { toolResult } from "@/utils/output-limit";
 import { cacheInfo } from "@/cache/ephemeral-cache";
 const tfEnum = z.enum(["5m", "15m", "1h"]);
 const timeframes = z.array(tfEnum).default(["5m", "15m", "1h"]);
+const barSelection = z.enum(["current", "closed", "both"]).default("both");
+const timeframeRequest = z.object({ timeframes, barSelection }).passthrough();
 
 type ToolResult = ReturnType<typeof toolResult>;
 
@@ -16,6 +18,23 @@ type ToolDefinition = {
   inputSchema: z.ZodRawShape;
   run: (input: Record<string, unknown>) => Promise<ToolResult>;
 };
+
+export function filterTimeframesForRequest(
+  snapshot: { timeframes: object },
+  input: Record<string, unknown>,
+) {
+  const request = timeframeRequest.parse(input);
+  const snapshotTimeframes = snapshot.timeframes as Record<string, unknown>;
+  return Object.fromEntries(
+    request.timeframes.map((tf: z.infer<typeof tfEnum>) => {
+      const timeframe = { ...(snapshotTimeframes[tf] as Record<string, unknown>) };
+      if (request.barSelection === "current") delete timeframe.closedBar;
+      if (request.barSelection === "closed") delete timeframe.currentBar;
+      return [tf, timeframe];
+    }),
+  );
+}
+
 async function snap(input: { maxAgeMs?: number }) {
   const env = getEnv();
   const max = input.maxAgeMs ?? env.MAX_ACCEPTABLE_DATA_AGE_MS;
@@ -30,7 +49,7 @@ export const tools: ToolDefinition[] = [
       "Comprehensive read-only normalized BTC intraday snapshot: Binance USD-M timeframes, Hyperliquid perpetual context, liquidation aggregates, and Deribit options when supplied. Does not return trade advice or execution.",
     inputSchema: {
       timeframes,
-      barSelection: z.enum(["current", "closed", "both"]).default("both"),
+      barSelection,
       includeOptionsStrikes: z.boolean().default(false),
       maxOptionsExpiries: z.number().int().min(1).max(6).default(3),
       maxStrikesPerExpiry: z.number().int().min(0).max(50).default(12),
@@ -49,7 +68,7 @@ export const tools: ToolDefinition[] = [
       "Selected 5m, 15m, and 1h Binance USD-M BTCUSDT futures volume and VWAP data. Use for venue-specific intraday volume/VWAP; does not return Hyperliquid volume.",
     inputSchema: {
       timeframes,
-      barSelection: z.enum(["current", "closed", "both"]).default("both"),
+      barSelection,
       maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
     },
     run: async (i: Record<string, unknown>) => {
@@ -58,7 +77,7 @@ export const tools: ToolDefinition[] = [
         {
           asOf: s.asOf,
           receivedAt: s.receivedAt,
-          timeframes: s.timeframes,
+          timeframes: filterTimeframesForRequest(s, i),
           quality: s.quality,
           warnings: s.warnings,
         },
