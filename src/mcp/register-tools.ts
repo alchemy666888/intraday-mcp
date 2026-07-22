@@ -1,22 +1,7 @@
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { tools } from "@/tools/all";
 
-type ToolRunner = (input: Record<string, unknown>) => Promise<unknown>;
-type ToolConfig = {
-  title: string;
-  description: string;
-  inputSchema: object;
-  annotations: {
-    readOnlyHint: boolean;
-    destructiveHint: boolean;
-    idempotentHint: boolean;
-    openWorldHint: boolean;
-  };
-};
-type ToolServer = {
-  registerTool: (name: string, config: ToolConfig, run: ToolRunner) => unknown;
-};
-
-export function registerTools(server: ToolServer) {
+export function registerTools(server: McpServer) {
   for (const t of tools) {
     server.registerTool(
       t.name,
