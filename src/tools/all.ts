@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { getEnv, VERSION } from "@/config/env";
 import { fetchMarketData } from "@/clients/market-data-client";
+import {
+  fetchBinanceTimeframeFallback,
+  mergeBinanceTimeframeFallback,
+} from "@/clients/binance-timeframes-client";
 import { normalize } from "@/normalizers/snapshot";
 import { toolResult } from "@/utils/output-limit";
 import { cacheInfo } from "@/cache/ephemeral-cache";
@@ -35,11 +39,20 @@ export function filterTimeframesForRequest(
   );
 }
 
-async function snap(input: { maxAgeMs?: number }) {
+async function snap(input: { maxAgeMs?: number }, options: { enrichTimeframes?: boolean } = {}) {
   const env = getEnv();
   const max = input.maxAgeMs ?? env.MAX_ACCEPTABLE_DATA_AGE_MS;
   const r = await fetchMarketData(max);
-  return normalize(r.payload, r.meta, max);
+  const snapshot = normalize(r.payload, r.meta, max);
+  const snapshotTimeframes = snapshot.timeframes as Record<string, { status?: string }>;
+  if (
+    options.enrichTimeframes &&
+    Object.values(snapshotTimeframes).some((section) => section.status === "unavailable")
+  ) {
+    const fallback = await fetchBinanceTimeframeFallback(max);
+    return mergeBinanceTimeframeFallback(snapshot, fallback);
+  }
+  return snapshot;
 }
 export const tools: ToolDefinition[] = [
   {
@@ -57,7 +70,7 @@ export const tools: ToolDefinition[] = [
       strict: z.boolean().default(false),
     },
     run: async (i: Record<string, unknown>) => {
-      const s = await snap(i);
+      const s = await snap(i, { enrichTimeframes: true });
       return toolResult(s, getEnv().MAX_TOOL_RESULT_BYTES);
     },
   },
@@ -72,7 +85,7 @@ export const tools: ToolDefinition[] = [
       maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
     },
     run: async (i: Record<string, unknown>) => {
-      const s = await snap(i);
+      const s = await snap(i, { enrichTimeframes: true });
       return toolResult(
         {
           asOf: s.asOf,
@@ -157,7 +170,7 @@ export const tools: ToolDefinition[] = [
       maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
     },
     run: async (i: Record<string, unknown>) => {
-      const s = await snap(i);
+      const s = await snap(i, { enrichTimeframes: true });
       const data = {
         asOf: s.asOf,
         market: "BTC",
