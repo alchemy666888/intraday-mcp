@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { getEnv, VERSION } from "@/config/env";
 import { fetchMarketData } from "@/clients/market-data-client";
+import {
+  fetchBinanceTimeframeFallback,
+  mergeBinanceTimeframeFallback,
+} from "@/clients/binance-timeframes-client";
 import { normalize } from "@/normalizers/snapshot";
 import { toolResult } from "@/utils/output-limit";
 import { cacheInfo } from "@/cache/ephemeral-cache";
@@ -39,7 +43,13 @@ async function snap(input: { maxAgeMs?: number }) {
   const env = getEnv();
   const max = input.maxAgeMs ?? env.MAX_ACCEPTABLE_DATA_AGE_MS;
   const r = await fetchMarketData(max);
-  return normalize(r.payload, r.meta, max);
+  const snapshot = normalize(r.payload, r.meta, max);
+  const snapshotTimeframes = snapshot.timeframes as Record<string, { status?: string }>;
+  if (Object.values(snapshotTimeframes).some((section) => section.status === "unavailable")) {
+    const fallback = await fetchBinanceTimeframeFallback(max);
+    return mergeBinanceTimeframeFallback(snapshot, fallback);
+  }
+  return snapshot;
 }
 export const tools: ToolDefinition[] = [
   {
