@@ -6,13 +6,23 @@ import { toolResult } from "@/utils/output-limit";
 import { cacheInfo } from "@/cache/ephemeral-cache";
 const tfEnum = z.enum(["5m", "15m", "1h"]);
 const timeframes = z.array(tfEnum).default(["5m", "15m", "1h"]);
+
+type ToolResult = ReturnType<typeof toolResult>;
+
+type ToolDefinition = {
+  name: string;
+  title: string;
+  description: string;
+  inputSchema: z.ZodRawShape;
+  run: (input: Record<string, unknown>) => Promise<ToolResult>;
+};
 async function snap(input: { maxAgeMs?: number }) {
   const env = getEnv();
   const max = input.maxAgeMs ?? env.MAX_ACCEPTABLE_DATA_AGE_MS;
   const r = await fetchMarketData(max);
   return normalize(r.payload, r.meta, max);
 }
-export const tools = [
+export const tools: ToolDefinition[] = [
   {
     name: "get_btc_intraday_snapshot",
     title: "BTC intraday snapshot",
