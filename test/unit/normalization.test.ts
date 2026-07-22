@@ -11,6 +11,7 @@ type NormalizedTimeframes = Record<
     quoteVolumeUsd: number | null;
     vwapUsd: number | null;
     tradeCount: number | null;
+    warnings: string[];
     currentBar: Record<string, unknown>;
     closedBar: Record<string, unknown>;
   }
@@ -50,11 +51,11 @@ test("btcIntraday without every enriched section reports partial-enriched comple
     120000,
   );
 
-  assert.equal(snapshot.status, "fresh");
+  assert.equal(snapshot.status, "live");
   assert.equal(snapshot.quality.completeness, "partial-enriched");
-  assert.equal(tframe(snapshot)["5m"].status, "missing");
-  assert.equal(snapshot.perpetual.status, "fresh");
-  assert.equal(snapshot.options.status, "missing");
+  assert.equal(tframe(snapshot)["5m"].status, "unavailable");
+  assert.equal(snapshot.perpetual.status, "live");
+  assert.equal(snapshot.options.status, "unavailable");
 });
 
 test("btcIntraday with all enriched sections reports enriched completeness", () => {
@@ -119,7 +120,7 @@ test("enriched upstream normalizes populated btcIntraday.timeframes", () => {
 
   const timeframes = tframe(snapshot);
 
-  assert.equal(timeframes["5m"].status, "fresh");
+  assert.equal(timeframes["5m"].status, "live");
   assert.equal(timeframes["5m"].reason, null);
   assert.equal(timeframes["5m"].baseVolumeBtc, 10);
   assert.equal(timeframes["5m"].quoteVolumeUsd, 1000000);
@@ -158,11 +159,86 @@ test("enriched upstream normalizes nested Binance timeframe roots", () => {
 
   const timeframes = tframe(snapshot);
 
-  assert.equal(timeframes["5m"].status, "fresh");
+  assert.equal(timeframes["5m"].status, "live");
   assert.equal(timeframes["5m"].reason, null);
   assert.equal(timeframes["5m"].vwapUsd, 100000);
   assert.equal(timeframes["15m"].vwapUsd, 110000);
   assert.equal(timeframes["1h"].vwapUsd, 110000);
+});
+
+test("enriched upstream normalizes timeframe windows section", () => {
+  const snapshot = normalize(
+    {
+      timestamp: "2026-07-22T00:00:00.000Z",
+      btcIntraday: {
+        asOf: "2026-07-22T00:00:00.000Z",
+        timeframes: {
+          source: "Binance USD-M",
+          status: "live",
+          windows: {
+            "5m": {
+              baseVolumeBtc: 3,
+              quoteVolumeUsd: 300000,
+              tradeCount: 9,
+              currentBar: { openTime: "2026-07-22T00:00:00.000Z" },
+            },
+            "15m": { baseVolume: 4, quoteVolume: 440000 },
+            "1h": { volumeBtc: 5, vwapUsd: 120000 },
+          },
+        },
+      },
+    },
+    meta,
+    120000,
+  );
+
+  const timeframes = tframe(snapshot);
+
+  assert.equal(timeframes["5m"].status, "live");
+  assert.equal(timeframes["5m"].reason, null);
+  assert.equal(timeframes["5m"].vwapUsd, 100000);
+  assert.equal(timeframes["5m"].tradeCount, 9);
+  assert.deepEqual(timeframes["5m"].currentBar, {
+    openTime: "2026-07-22T00:00:00.000Z",
+  });
+  assert.equal(timeframes["15m"].vwapUsd, 110000);
+  assert.equal(timeframes["1h"].baseVolumeBtc, 5);
+  assert.equal(timeframes["1h"].vwapUsd, 120000);
+});
+
+test("empty upstream timeframes preserve Binance provider diagnostics", () => {
+  const snapshot = normalize(
+    {
+      timestamp: "2026-07-22T00:00:00.000Z",
+      btcIntraday: {
+        asOf: "2026-07-22T00:00:00.000Z",
+        timeframes: {},
+        quality: {
+          warnings: ["binance: Binance klines 15m HTTP 451", "deribit: Deribit ticker HTTP 429"],
+          sources: {
+            binance: {
+              status: "unavailable",
+              reason: "Binance klines 15m HTTP 451",
+            },
+          },
+        },
+      },
+    },
+    meta,
+    120000,
+  );
+
+  const timeframes = tframe(snapshot);
+
+  assert.deepEqual(snapshot.quality.warnings, [
+    "binance: Binance klines 15m HTTP 451",
+    "deribit: Deribit ticker HTTP 429",
+  ]);
+  for (const tf of ["5m", "15m", "1h"] as const) {
+    assert.equal(timeframes[tf].status, "unavailable");
+    assert.equal(timeframes[tf].reason, "Binance klines 15m HTTP 451");
+    assert.deepEqual(timeframes[tf].warnings, ["binance: Binance klines 15m HTTP 451"]);
+  }
 });
 
 test("enriched upstream with missing btcIntraday.timeframes marks windows unavailable", () => {
@@ -198,7 +274,7 @@ test("enriched upstream with empty btcIntraday.timeframes preserves upstream sec
 
   const timeframes = tframe(snapshot);
 
-  assert.equal(snapshot.status, "fresh");
+  assert.equal(snapshot.status, "live");
   assert.equal(timeframes["5m"].reason, "upstream section missing");
   assert.equal(timeframes["15m"].reason, "upstream section missing");
   assert.equal(timeframes["1h"].reason, "upstream section missing");

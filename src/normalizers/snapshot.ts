@@ -6,6 +6,11 @@ const tfs = ["5m", "15m", "1h"] as const;
 type Obj = Record<string, unknown>;
 const obj = (v: unknown): Obj =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Obj) : {};
+const stringArray = (v: unknown) =>
+  Array.isArray(v) ? v.filter((s): s is string => typeof s === "string" && s.length > 0) : [];
+const firstString = (...values: unknown[]) =>
+  values.find((v): v is string => typeof v === "string" && v.length > 0) ?? null;
+const uniq = (values: string[]) => [...new Set(values)];
 const num = (o: Obj, ...keys: string[]) => {
   for (const k of keys) {
     const v = finite(o[k], {
@@ -26,6 +31,7 @@ const meta = (
   maxAgeMs: number,
   present = true,
   warnings: string[] = [],
+  unavailableReason: string | null = null,
 ) => {
   const age = ageMs(asOf, receivedAt);
   return {
@@ -36,28 +42,60 @@ const meta = (
     ageMs: age,
     status: statusFor(age, maxAgeMs, present),
     method: "validated upstream normalization",
-    reason: present ? null : "upstream section missing",
+    reason: present ? null : (unavailableReason ?? "upstream section missing"),
     warnings,
   };
 };
 const hasTimeframeKeys = (o: Obj) => tfs.some((tf) => Object.keys(obj(o[tf])).length > 0);
+const timeframeKey = (o: Obj) => {
+  const value = o.timeframe ?? o.window ?? o.interval;
+  return typeof value === "string" && (tfs as readonly string[]).includes(value) ? value : null;
+};
+const timeframeRootFromArray = (items: unknown[]) => {
+  const entries = items.flatMap((item) => {
+    const o = obj(item);
+    const key = timeframeKey(o);
+    return key ? ([[key, o]] as const) : [];
+  });
+  return entries.length > 0 ? Object.fromEntries(entries) : {};
+};
+const timeframeRoot = (value: unknown) => {
+  if (Array.isArray(value)) return timeframeRootFromArray(value);
+  const o = obj(value);
+  if (hasTimeframeKeys(o)) return o;
+  for (const key of ["windows", "byTimeframe", "data", "bars", "klines", "candles", "intervals"]) {
+    const nested = o[key];
+    if (Array.isArray(nested)) {
+      const root = timeframeRootFromArray(nested);
+      if (hasTimeframeKeys(root)) return root;
+      continue;
+    }
+    const root = obj(nested);
+    if (hasTimeframeKeys(root)) return root;
+  }
+  return {};
+};
 const firstTimeframeRoot = (...roots: Obj[]) => {
   const candidates = roots.flatMap((root) => [
-    obj(root.timeframes),
-    obj(root.binanceTimeframes),
-    obj(root.binanceUsdMTimeframes),
-    obj(root.binanceFuturesTimeframes),
-    obj(root.binanceKlines),
-    obj(root.klines),
-    obj(root.candles),
-    obj(obj(root.binance).timeframes),
-    obj(obj(root.binanceUsdM).timeframes),
-    obj(obj(root.binanceFutures).timeframes),
-    obj(obj(root.binance).klines),
-    obj(obj(root.binanceUsdM).klines),
-    obj(obj(root.binanceFutures).klines),
+    root.timeframes,
+    root.binanceTimeframes,
+    root.binanceUsdMTimeframes,
+    root.binanceFuturesTimeframes,
+    root.binanceKlines,
+    root.klines,
+    root.candles,
+    obj(root.binance).timeframes,
+    obj(root.binanceUsdM).timeframes,
+    obj(root.binanceFutures).timeframes,
+    obj(root.binance).klines,
+    obj(root.binanceUsdM).klines,
+    obj(root.binanceFutures).klines,
   ]);
-  return candidates.find(hasTimeframeKeys) ?? {};
+  for (const candidate of candidates) {
+    const root = timeframeRoot(candidate);
+    if (hasTimeframeKeys(root)) return root;
+  }
+  return {};
 };
 export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
   const receivedAt = fm.receivedAt;
@@ -65,18 +103,31 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
   const btc = obj(up.btcIntraday);
   const enriched = !!up.btcIntraday;
   const asOf = validIso(btc.asOf) ?? validIso(up.timestamp) ?? receivedAt;
+  const upstreamQuality = obj(btc.quality);
+  const upstreamWarnings = stringArray(upstreamQuality.warnings);
   const warnings: string[] = [];
   if (!enriched)
     warnings.push("btcIntraday enriched profile is absent; enriched metrics are unavailable");
   if (fm.cacheStatus === "stale-if-error")
     warnings.push("served from stale ephemeral cache after upstream error");
+  warnings.push(...upstreamWarnings);
   const tfRoot = firstTimeframeRoot(btc, root);
+  const timeframeSection = obj(btc.timeframes);
+  const binanceSource = obj(obj(upstreamQuality.sources).binance);
+  const binanceReason = firstString(timeframeSection.reason, binanceSource.reason);
+  const binanceWarnings = uniq([
+    ...stringArray(timeframeSection.warnings),
+    ...upstreamWarnings.filter((warning) => warning.toLowerCase().includes("binance")),
+  ]);
   const timeframes: object = Object.fromEntries(
     tfs.map((tf) => {
       const o = obj(tfRoot[tf]);
-      const base = num(o, "baseVolumeBtc", "baseVolume", "volumeBtc");
-      const quote = num(o, "quoteVolumeUsd", "quoteVolume");
-      const vwap = num(o, "vwapUsd", "vwap") ?? (base && quote ? quote / base : null);
+      const base = num(o, "baseVolumeBtc", "baseVolume", "volumeBtc", "volume", "v");
+      const quote = num(o, "quoteVolumeUsd", "quoteVolume", "volumeUsd", "quoteAssetVolume", "q");
+      const vwap =
+        num(o, "vwapUsd", "vwap") ??
+        (base !== null && base > 0 && quote !== null ? quote / base : null);
+      const present = enriched && Object.keys(o).length > 0;
       return [
         tf,
         {
@@ -86,16 +137,18 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
             asOf,
             receivedAt,
             maxAgeMs,
-            enriched && Object.keys(o).length > 0,
+            present,
+            present ? [] : binanceWarnings,
+            binanceReason,
           ),
           timeframe: tf,
           units: { baseVolumeBtc: "BTC", quoteVolumeUsd: "USD", vwapUsd: "USD/BTC" },
           baseVolumeBtc: base,
           quoteVolumeUsd: quote,
           vwapUsd: vwap,
-          tradeCount: num(o, "tradeCount", "trades"),
-          takerBuyBaseVolumeBtc: num(o, "takerBuyBaseVolumeBtc"),
-          takerBuyQuoteVolumeUsd: num(o, "takerBuyQuoteVolumeUsd"),
+          tradeCount: num(o, "tradeCount", "trades", "numberOfTrades", "n"),
+          takerBuyBaseVolumeBtc: num(o, "takerBuyBaseVolumeBtc", "takerBuyBaseAssetVolume"),
+          takerBuyQuoteVolumeUsd: num(o, "takerBuyQuoteVolumeUsd", "takerBuyQuoteAssetVolume"),
           currentBar: obj(o.currentBar),
           closedBar: obj(o.closedBar),
         },
