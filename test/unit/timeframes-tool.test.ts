@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { filterTimeframesForRequest } from "../../src/tools/all.ts";
+import { filterTimeframesForRequest } from "../../src/tools/all";
 
 const snapshot = {
   timeframes: {

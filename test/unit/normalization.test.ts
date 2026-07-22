@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalize } from "../../src/normalizers/snapshot.ts";
+import { normalize } from "../../src/normalizers/snapshot";
 
 type NormalizedTimeframes = Record<
   string,
@@ -89,7 +89,9 @@ test("perpetual derived fields are deterministic", () => {
     meta,
     120000,
   );
-  assert.equal(snapshot.perpetual.fundingAprSimple, 0.0876);
+  const fundingApr = snapshot.perpetual.fundingAprSimple;
+  if (fundingApr === null) assert.fail("expected funding APR to be calculated");
+  assert.ok(Math.abs(fundingApr - 0.0876) < Number.EPSILON);
   assert.equal(snapshot.perpetual.openInterestUsd, 200000);
 });
 
