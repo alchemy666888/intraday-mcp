@@ -7,12 +7,14 @@ import { cacheInfo } from "@/cache/ephemeral-cache";
 const tfEnum = z.enum(["5m", "15m", "1h"]);
 const timeframes = z.array(tfEnum).default(["5m", "15m", "1h"]);
 
+type ToolResult = ReturnType<typeof toolResult>;
+
 type ToolDefinition = {
   name: string;
   title: string;
   description: string;
   inputSchema: z.ZodRawShape;
-  run: (input: Record<string, unknown>) => Promise<unknown>;
+  run: (input: Record<string, unknown>) => Promise<ToolResult>;
 };
 async function snap(input: { maxAgeMs?: number }) {
   const env = getEnv();
