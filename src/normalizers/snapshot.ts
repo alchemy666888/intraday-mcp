@@ -186,6 +186,18 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
     ),
     expiries,
   };
+  const enrichedSectionCompleteness = {
+    timeframes: Object.keys(tfRoot).length > 0,
+    perpetual: Object.keys(p).length > 0,
+    liquidations: Object.keys(liqRoot).length > 0,
+    options: expiries.length > 0,
+  };
+  const hasAllEnrichedSections = Object.values(enrichedSectionCompleteness).every(Boolean);
+  const completeness = enriched
+    ? hasAllEnrichedSections
+      ? "enriched"
+      : "partial-enriched"
+    : "legacy-only";
   return {
     schemaVersion: "1.0.0",
     asOf,
@@ -209,7 +221,7 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
         },
     quality: {
       freshnessMs: ageMs(asOf, receivedAt),
-      completeness: enriched ? "enriched" : "legacy-only",
+      completeness,
       cacheStatus: fm.cacheStatus,
       warnings,
     },
