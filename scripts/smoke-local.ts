@@ -1,0 +1,1 @@
+const base=process.env.MCP_PUBLIC_BASE_URL??"http://localhost:3000"; for(const path of ["/api/healthz","/api/readyz"]){ const r=await fetch(new URL(path,base)); console.log(path,r.status,await r.text()); }
