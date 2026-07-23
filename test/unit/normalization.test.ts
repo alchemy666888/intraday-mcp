@@ -236,11 +236,15 @@ test("empty upstream timeframes preserve Binance provider diagnostics", () => {
     "binance: Binance klines 15m HTTP 451",
     "deribit: Deribit ticker HTTP 429",
   ]);
-  for (const tf of ["5m", "15m", "1h"] as const) {
-    assert.equal(timeframes[tf].status, "unavailable");
-    assert.equal(timeframes[tf].reason, "Binance klines 15m HTTP 451");
-    assert.deepEqual(timeframes[tf].warnings, ["binance: Binance klines 15m HTTP 451"]);
-  }
+  assert.equal(timeframes["5m"].status, "unavailable");
+  assert.equal(timeframes["5m"].reason, "upstream section missing");
+  assert.deepEqual(timeframes["5m"].warnings, []);
+  assert.equal(timeframes["15m"].status, "unavailable");
+  assert.equal(timeframes["15m"].reason, "Binance klines 15m HTTP 451");
+  assert.deepEqual(timeframes["15m"].warnings, ["binance: Binance klines 15m HTTP 451"]);
+  assert.equal(timeframes["1h"].status, "unavailable");
+  assert.equal(timeframes["1h"].reason, "upstream section missing");
+  assert.deepEqual(timeframes["1h"].warnings, []);
 });
 
 test("enriched upstream with missing btcIntraday.timeframes marks windows unavailable", () => {

@@ -231,6 +231,14 @@ const uniq = (values: string[]) => [...new Set(values.filter(Boolean))];
 const sectionPresent = (section: Obj | undefined) =>
   section !== undefined && section.status !== "unavailable";
 
+const diagnosticReason = (timeframe: Timeframe, diagnostics: string[]) => {
+  for (const diagnostic of diagnostics) {
+    const match = diagnostic.match(new RegExp(`^${timeframe}\\s+\\S+\\s+HTTP\\s+(\\d{3})\\b`));
+    if (match) return `Binance USD-M klines ${timeframe} HTTP ${match[1]}`;
+  }
+  return "Binance USD-M klines unavailable from upstream and direct fallback";
+};
+
 export function mergeBinanceTimeframeFallback<
   T extends { timeframes: object; quality: Obj; warnings: string[] },
 >(snapshot: T, fallback: BinanceTimeframeFallback): T {
@@ -264,10 +272,7 @@ export function mergeBinanceTimeframeFallback<
           timeframe,
           {
             ...existing[timeframe],
-            reason:
-              existing[timeframe]?.reason === "upstream section missing"
-                ? "Binance USD-M klines unavailable from upstream and direct fallback"
-                : existing[timeframe]?.reason,
+            reason: diagnosticReason(timeframe, timeframeDiagnostics),
             warnings: uniq([
               ...((existing[timeframe]?.warnings as string[] | undefined) ?? []),
               timeframeFallbackWarning,
