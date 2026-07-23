@@ -10,6 +10,16 @@ const stringArray = (v: unknown) =>
   Array.isArray(v) ? v.filter((s): s is string => typeof s === "string" && s.length > 0) : [];
 const firstString = (...values: unknown[]) =>
   values.find((v): v is string => typeof v === "string" && v.length > 0) ?? null;
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const timeframePattern = (tf: string) => new RegExp(`(^|\\s)${escapeRegExp(tf)}($|\\s)`, "i");
+const reasonAppliesToTimeframe = (reason: string, tf: string) => {
+  const match = reason.match(/\b(?:klines?|candles?|timeframes?)\s+(5m|15m|1h)\b/i);
+  return match ? match[1] === tf : timeframePattern(tf).test(reason);
+};
+const timeframeScopedStrings = (values: string[], tf: string) => {
+  const scoped = values.filter((value) => reasonAppliesToTimeframe(value, tf));
+  return scoped.length > 0 ? scoped : values.filter((value) => !/\b(?:5m|15m|1h)\b/i.test(value));
+};
 const uniq = (values: string[]) => [...new Set(values)];
 const num = (o: Obj, ...keys: string[]) => {
   for (const k of keys) {
@@ -128,6 +138,11 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
         num(o, "vwapUsd", "vwap") ??
         (base !== null && base > 0 && quote !== null ? quote / base : null);
       const present = enriched && Object.keys(o).length > 0;
+      const timeframeBinanceWarnings = timeframeScopedStrings(binanceWarnings, tf);
+      const timeframeBinanceReason =
+        binanceReason && reasonAppliesToTimeframe(binanceReason, tf)
+          ? binanceReason
+          : firstString(...timeframeBinanceWarnings);
       return [
         tf,
         {
@@ -138,8 +153,8 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
             receivedAt,
             maxAgeMs,
             present,
-            present ? [] : binanceWarnings,
-            binanceReason,
+            present ? [] : timeframeBinanceWarnings,
+            timeframeBinanceReason,
           ),
           timeframe: tf,
           units: { baseVolumeBtc: "BTC", quoteVolumeUsd: "USD", vwapUsd: "USD/BTC" },

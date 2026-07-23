@@ -6,11 +6,12 @@ type Timeframe = (typeof timeframes)[number];
 type Obj = Record<string, unknown>;
 
 const endpoints = [
-  { name: "fapi.binance.com", baseUrl: "https://fapi.binance.com" },
-  { name: "fapi1.binance.com", baseUrl: "https://fapi1.binance.com" },
-  { name: "fapi2.binance.com", baseUrl: "https://fapi2.binance.com" },
-  { name: "fapi3.binance.com", baseUrl: "https://fapi3.binance.com" },
-  { name: "fapi4.binance.com", baseUrl: "https://fapi4.binance.com" },
+  { name: "api.binance.com", baseUrl: "https://api.binance.com" },
+  { name: "api-gcp.binance.com", baseUrl: "https://api-gcp.binance.com" },
+  { name: "api1.binance.com", baseUrl: "https://api1.binance.com" },
+  { name: "api2.binance.com", baseUrl: "https://api2.binance.com" },
+  { name: "api3.binance.com", baseUrl: "https://api3.binance.com" },
+  { name: "api4.binance.com", baseUrl: "https://api4.binance.com" },
   { name: "data-api.binance.vision", baseUrl: "https://data-api.binance.vision" },
 ];
 
@@ -128,13 +129,13 @@ const sectionFromKlines = (
     selected.baseVolumeBtc > 0 ? selected.quoteVolumeUsd / selected.baseVolumeBtc : null;
 
   return {
-    source: "Binance USD-M public REST API",
-    venue: "Binance USD-M BTCUSDT futures",
+    source: "Binance Spot public REST API",
+    venue: "Binance Spot BTCUSDT",
     asOf,
     receivedAt,
     ageMs: age,
     status: statusFor(age, maxAgeMs, true),
-    method: `direct Binance USD-M klines fallback (${endpointName})`,
+    method: `direct Binance Spot klines fallback (${endpointName})`,
     reason: null,
     warnings: [],
     timeframe,
@@ -160,7 +161,7 @@ const fetchRows = async (
   const timeoutMs = Math.min(2500, Math.max(750, Math.floor(maxAgeMs / 8)));
 
   for (const endpoint of endpoints) {
-    const url = new URL("/fapi/v1/klines", endpoint.baseUrl);
+    const url = new URL("/api/v3/klines", endpoint.baseUrl);
     url.searchParams.set("symbol", "BTCUSDT");
     url.searchParams.set("interval", timeframe);
     url.searchParams.set("limit", "2");
@@ -231,6 +232,14 @@ const uniq = (values: string[]) => [...new Set(values.filter(Boolean))];
 const sectionPresent = (section: Obj | undefined) =>
   section !== undefined && section.status !== "unavailable";
 
+const diagnosticReason = (timeframe: Timeframe, diagnostics: string[]) => {
+  for (const diagnostic of diagnostics) {
+    const match = diagnostic.match(new RegExp(`^${timeframe}\\s+\\S+\\s+HTTP\\s+(\\d{3})\\b`));
+    if (match) return `Binance Spot klines ${timeframe} HTTP ${match[1]}`;
+  }
+  return "Binance Spot klines unavailable from upstream and direct fallback";
+};
+
 export function mergeBinanceTimeframeFallback<
   T extends { timeframes: object; quality: Obj; warnings: string[] },
 >(snapshot: T, fallback: BinanceTimeframeFallback): T {
@@ -238,11 +247,11 @@ export function mergeBinanceTimeframeFallback<
   const diagnostics = uniq(fallback.diagnostics);
   const fallbackWarning =
     diagnostics.length > 0
-      ? `Binance USD-M direct kline fallback diagnostics: ${diagnostics.join(" | ")}`
+      ? `Binance Spot direct kline fallback diagnostics: ${diagnostics.join(" | ")}`
       : null;
   const filledWarning =
     Object.keys(fallback.timeframes).length > 0
-      ? "btcIntraday.timeframes filled from direct Binance USD-M public REST API fallback"
+      ? "btcIntraday.timeframes filled from direct Binance Spot public REST API fallback"
       : null;
 
   const timeframesOut = Object.fromEntries(
@@ -253,7 +262,7 @@ export function mergeBinanceTimeframeFallback<
       );
       const timeframeFallbackWarning =
         timeframeDiagnostics.length > 0
-          ? `Binance USD-M direct kline fallback diagnostics: ${timeframeDiagnostics.join(" | ")}`
+          ? `Binance Spot direct kline fallback diagnostics: ${timeframeDiagnostics.join(" | ")}`
           : null;
       if (fallbackSection && !sectionPresent(existing[timeframe])) {
         return [timeframe, fallbackSection];
@@ -264,10 +273,7 @@ export function mergeBinanceTimeframeFallback<
           timeframe,
           {
             ...existing[timeframe],
-            reason:
-              existing[timeframe]?.reason === "upstream section missing"
-                ? "Binance USD-M klines unavailable from upstream and direct fallback"
-                : existing[timeframe]?.reason,
+            reason: diagnosticReason(timeframe, timeframeDiagnostics),
             warnings: uniq([
               ...((existing[timeframe]?.warnings as string[] | undefined) ?? []),
               timeframeFallbackWarning,
