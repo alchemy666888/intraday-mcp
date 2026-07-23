@@ -175,7 +175,7 @@ test("enriched upstream normalizes timeframe windows section", () => {
       btcIntraday: {
         asOf: "2026-07-22T00:00:00.000Z",
         timeframes: {
-          source: "Binance USD-M",
+          source: "Binance Spot",
           status: "live",
           windows: {
             "5m": {

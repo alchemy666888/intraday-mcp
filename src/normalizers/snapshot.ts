@@ -148,7 +148,7 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
         {
           ...meta(
             "canonical market-data API",
-            "Binance USD-M BTCUSDT futures",
+            "Binance Spot BTCUSDT",
             asOf,
             receivedAt,
             maxAgeMs,

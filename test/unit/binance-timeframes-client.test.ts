@@ -95,3 +95,44 @@ test("Binance fallback diagnostics replace generic upstream missing reason", () 
   assert.match(String(timeframes["15m"].warnings), /15m api\.binance\.com HTTP 451/);
   assert.match(String(merged.quality.warnings), /data-api\.binance\.vision HTTP 404/);
 });
+
+test("Binance Spot timeframe data replaces existing upstream timeframe data", () => {
+  const snapshot = {
+    timeframes: {
+      "5m": {
+        source: "canonical market-data API",
+        venue: "legacy upstream venue",
+        status: "live",
+        baseVolumeBtc: 1,
+        quoteVolumeUsd: 100,
+        warnings: [],
+      },
+      "15m": { status: "unavailable", reason: "upstream section missing", warnings: [] },
+      "1h": { status: "unavailable", reason: "upstream section missing", warnings: [] },
+    },
+    quality: { warnings: [] },
+    warnings: [],
+  };
+
+  const merged = mergeBinanceTimeframeFallback(snapshot, {
+    timeframes: {
+      "5m": {
+        source: "Binance Spot public REST API",
+        venue: "Binance Spot BTCUSDT",
+        status: "live",
+        baseVolumeBtc: 10,
+        quoteVolumeUsd: 1000000,
+      },
+    },
+    diagnostics: [],
+  });
+  const timeframes = merged.timeframes as Record<string, Record<string, unknown>>;
+
+  assert.equal(timeframes["5m"].source, "Binance Spot public REST API");
+  assert.equal(timeframes["5m"].venue, "Binance Spot BTCUSDT");
+  assert.equal(timeframes["5m"].baseVolumeBtc, 10);
+  assert.match(
+    String(merged.quality.warnings),
+    /provided by direct Binance Spot public REST API/,
+  );
+});
