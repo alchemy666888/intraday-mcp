@@ -20,7 +20,7 @@ const row = (openTime: number, closeTime: number) => [
   "0",
 ];
 
-test("Binance timeframe fallback normalizes USD-M kline rows", async () => {
+test("Binance timeframe fallback normalizes spot kline rows", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () =>
     new Response(
@@ -79,19 +79,19 @@ test("Binance fallback diagnostics replace generic upstream missing reason", () 
   const merged = mergeBinanceTimeframeFallback(snapshot, {
     timeframes: {},
     diagnostics: [
-      "5m fapi.binance.com HTTP 451: Service unavailable from a restricted location",
+      "5m api.binance.com HTTP 451: Service unavailable from a restricted location",
       "5m data-api.binance.vision HTTP 404: Not Found",
-      "15m fapi.binance.com HTTP 451: Service unavailable from a restricted location",
+      "15m api.binance.com HTTP 451: Service unavailable from a restricted location",
     ],
   });
   const timeframes = merged.timeframes as Record<string, Record<string, unknown>>;
 
   assert.equal(
     timeframes["5m"].reason,
-    "Binance USD-M klines 5m HTTP 451",
+    "Binance Spot klines 5m HTTP 451",
   );
   assert.match(String(timeframes["5m"].warnings), /HTTP 451/);
-  assert.equal(timeframes["15m"].reason, "Binance USD-M klines 15m HTTP 451");
-  assert.match(String(timeframes["15m"].warnings), /15m fapi\.binance\.com HTTP 451/);
+  assert.equal(timeframes["15m"].reason, "Binance Spot klines 15m HTTP 451");
+  assert.match(String(timeframes["15m"].warnings), /15m api\.binance\.com HTTP 451/);
   assert.match(String(merged.quality.warnings), /data-api\.binance\.vision HTTP 404/);
 });
