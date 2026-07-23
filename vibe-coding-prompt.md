@@ -229,7 +229,7 @@ Stateless Vercel Function
     v
 Canonical market-data API
     |
-    +-- Binance USD-M volume and VWAP
+    +-- Binance Spot volume and VWAP
     +-- Hyperliquid funding and open interest
     +-- Redis-backed liquidation aggregates
     +-- Deribit options analytics
@@ -922,7 +922,7 @@ Use UTC ISO-8601 timestamps.
 
 ## Timeframe metrics
 
-Timeframe volume and VWAP originate from Binance USD-M BTCUSDT futures.
+Timeframe volume and VWAP originate from Binance Spot BTCUSDT.
 
 Expose:
 

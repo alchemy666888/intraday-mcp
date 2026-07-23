@@ -135,7 +135,7 @@ const sectionFromKlines = (
     receivedAt,
     ageMs: age,
     status: statusFor(age, maxAgeMs, true),
-    method: `direct Binance Spot klines fallback (${endpointName})`,
+    method: `direct Binance Spot klines (${endpointName})`,
     reason: null,
     warnings: [],
     timeframe,
@@ -237,7 +237,7 @@ const diagnosticReason = (timeframe: Timeframe, diagnostics: string[]) => {
     const match = diagnostic.match(new RegExp(`^${timeframe}\\s+\\S+\\s+HTTP\\s+(\\d{3})\\b`));
     if (match) return `Binance Spot klines ${timeframe} HTTP ${match[1]}`;
   }
-  return "Binance Spot klines unavailable from upstream and direct fallback";
+  return "Binance Spot klines unavailable from direct Spot endpoints";
 };
 
 export function mergeBinanceTimeframeFallback<
@@ -247,11 +247,11 @@ export function mergeBinanceTimeframeFallback<
   const diagnostics = uniq(fallback.diagnostics);
   const fallbackWarning =
     diagnostics.length > 0
-      ? `Binance Spot direct kline fallback diagnostics: ${diagnostics.join(" | ")}`
+      ? `Binance Spot direct kline diagnostics: ${diagnostics.join(" | ")}`
       : null;
   const filledWarning =
     Object.keys(fallback.timeframes).length > 0
-      ? "btcIntraday.timeframes filled from direct Binance Spot public REST API fallback"
+      ? "btcIntraday.timeframes provided by direct Binance Spot public REST API"
       : null;
 
   const timeframesOut = Object.fromEntries(
@@ -262,9 +262,9 @@ export function mergeBinanceTimeframeFallback<
       );
       const timeframeFallbackWarning =
         timeframeDiagnostics.length > 0
-          ? `Binance Spot direct kline fallback diagnostics: ${timeframeDiagnostics.join(" | ")}`
+          ? `Binance Spot direct kline diagnostics: ${timeframeDiagnostics.join(" | ")}`
           : null;
-      if (fallbackSection && !sectionPresent(existing[timeframe])) {
+      if (fallbackSection) {
         return [timeframe, fallbackSection];
       }
 

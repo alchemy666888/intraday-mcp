@@ -44,11 +44,7 @@ async function snap(input: { maxAgeMs?: number }, options: { enrichTimeframes?: 
   const max = input.maxAgeMs ?? env.MAX_ACCEPTABLE_DATA_AGE_MS;
   const r = await fetchMarketData(max);
   const snapshot = normalize(r.payload, r.meta, max);
-  const snapshotTimeframes = snapshot.timeframes as Record<string, { status?: string }>;
-  if (
-    options.enrichTimeframes &&
-    Object.values(snapshotTimeframes).some((section) => section.status === "unavailable")
-  ) {
+  if (options.enrichTimeframes) {
     const fallback = await fetchBinanceTimeframeFallback(max);
     return mergeBinanceTimeframeFallback(snapshot, fallback);
   }
@@ -59,7 +55,7 @@ export const tools: ToolDefinition[] = [
     name: "get_btc_intraday_snapshot",
     title: "BTC intraday snapshot",
     description:
-      "Comprehensive read-only normalized BTC intraday snapshot: Binance USD-M timeframes, Hyperliquid perpetual context, liquidation aggregates, and Deribit options when supplied. Does not return trade advice or execution.",
+      "Comprehensive read-only normalized BTC intraday snapshot: Binance Spot timeframes, Hyperliquid perpetual context, liquidation aggregates, and Deribit options when supplied. Does not return trade advice or execution.",
     inputSchema: {
       timeframes,
       barSelection,
@@ -78,7 +74,7 @@ export const tools: ToolDefinition[] = [
     name: "get_btc_timeframes",
     title: "BTC Binance timeframes",
     description:
-      "Selected 5m, 15m, and 1h Binance USD-M BTCUSDT futures volume and VWAP data. Use for venue-specific intraday volume/VWAP; does not return Hyperliquid volume.",
+      "Selected 5m, 15m, and 1h Binance Spot BTCUSDT volume and VWAP data. Use for venue-specific intraday volume/VWAP; does not return Hyperliquid volume.",
     inputSchema: {
       timeframes,
       barSelection,
