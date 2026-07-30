@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const SERVICE = "btc-intraday-market-data";
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 const schema = z.object({
   MARKET_DATA_API_URL: z.string().url().default("https://alchemy666888.vercel.app/api/hyperliquid"),
   MARKET_DATA_PROFILE: z.string().default("btc-intraday"),
