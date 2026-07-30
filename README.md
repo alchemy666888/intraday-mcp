@@ -3,14 +3,19 @@
 Read-only Streamable HTTP MCP server for BTC intraday quantitative market data, designed for Vercel Hobby Plan and ChatGPT custom MCP apps.
 
 - Service: `btc-intraday-market-data`
-- Version: `1.0.0`
+- Version: `1.1.0`
 - Production MCP URL: `https://btc-intraday-mcp.vercel.app/api/mcp` (replace with actual assigned production domain if unavailable)
 - Health: `/api/healthz`
 - Ready: `/api/readyz`
 
 ## Tools
 
-`get_btc_intraday_snapshot`, `get_btc_timeframes`, `get_btc_perpetual_context`, `get_btc_liquidations`, `get_btc_options_surface`, `get_btc_report_context`, and `get_market_data_health`.
+Preferred BATS tools are `get_btc_market_history`, `get_btc_bats_features`,
+`get_btc_derivatives_history`, `get_btc_event_risk`, and `get_btc_bats_context`.
+The original seven tools remain available without breaking input changes:
+`get_btc_intraday_snapshot`, `get_btc_timeframes`, `get_btc_perpetual_context`,
+`get_btc_liquidations`, `get_btc_options_surface`, `get_btc_report_context` (compact legacy),
+and `get_market_data_health`.
 
 All tools are read-only, idempotent, bounded, and return `structuredContent` plus JSON text fallback. They never place trades, request exchange keys, sign transactions, or produce execution instructions.
 

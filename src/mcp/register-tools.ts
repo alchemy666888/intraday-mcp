@@ -9,6 +9,7 @@ export function registerTools(server: McpServer) {
         title: t.title,
         description: t.description,
         inputSchema: t.inputSchema,
+        ...(t.outputSchema ? { outputSchema: t.outputSchema } : {}),
         annotations: {
           readOnlyHint: true,
           destructiveHint: false,

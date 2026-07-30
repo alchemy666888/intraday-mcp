@@ -8,6 +8,9 @@ import {
 import { normalize } from "@/normalizers/snapshot";
 import { toolResult } from "@/utils/output-limit";
 import { cacheInfo } from "@/cache/ephemeral-cache";
+import { BATS_TIMEFRAMES } from "@/domain/market-data";
+import { marketHistory, batsFeatures, qualityGate } from "@/services/bats-service";
+import { CALCULATION_VERSION, SCHEMA_VERSION } from "@/domain/quality";
 const tfEnum = z.enum(["5m", "15m", "1h"]);
 const timeframes = z.array(tfEnum).default(["5m", "15m", "1h"]);
 const barSelection = z.enum(["current", "closed", "both"]).default("both");
@@ -20,6 +23,7 @@ type ToolDefinition = {
   title: string;
   description: string;
   inputSchema: z.ZodRawShape;
+  outputSchema?: z.ZodRawShape;
   run: (input: Record<string, unknown>) => Promise<ToolResult>;
 };
 
@@ -51,6 +55,258 @@ async function snap(input: { maxAgeMs?: number }, options: { enrichTimeframes?: 
   return snapshot;
 }
 export const tools: ToolDefinition[] = [
+  {
+    name: "get_btc_market_history",
+    title: "BTC Market History",
+    description:
+      "Return normalized historical BTC OHLCV arrays for deterministic analysis. This read-only tool returns market data only and does not provide trade advice.",
+    inputSchema: {
+      venue: z.enum(["auto", "binance_spot", "binance_usdm", "hyperliquid"]).default("auto"),
+      marketType: z.enum(["spot", "perpetual"]).default("spot"),
+      timeframes: z
+        .array(z.enum(BATS_TIMEFRAMES))
+        .min(1)
+        .max(6)
+        .default([...BATS_TIMEFRAMES]),
+      limit: z.number().int().min(50).max(500).default(300),
+      closedOnly: z.boolean().default(true),
+      maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
+      strict: z.boolean().default(false),
+    },
+    outputSchema: {
+      schemaVersion: z.string(),
+      asOf: z.string(),
+      market: z.literal("BTC"),
+      series: z.array(z.record(z.unknown())),
+      quality: z.record(z.unknown()),
+    },
+    run: async (i) =>
+      toolResult(
+        await marketHistory(i as Parameters<typeof marketHistory>[0]),
+        getEnv().MAX_TOOL_RESULT_BYTES,
+      ),
+  },
+  {
+    name: "get_btc_bats_features",
+    title: "BTC BATS Features",
+    description:
+      "Return deterministic closed-candle BATS indicators, trend state, volatility regime, session VWAP, structure, and reference levels. No recommendation or execution.",
+    inputSchema: {
+      venue: z.enum(["auto", "binance_spot", "binance_usdm", "hyperliquid"]).default("auto"),
+      sessionProfile: z.enum(["UTC_DEFAULT", "MYT_TRADING"]).default("UTC_DEFAULT"),
+      includeHistory: z.boolean().default(false),
+      historyPoints: z.number().int().min(1).max(20).default(3),
+      maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
+      strict: z.boolean().default(false),
+    },
+    outputSchema: {
+      schemaVersion: z.string(),
+      calculationVersion: z.string(),
+      asOf: z.string(),
+      indicators: z.record(z.unknown()),
+      marketState: z.record(z.unknown()),
+      structure: z.record(z.unknown()),
+      levels: z.record(z.unknown()),
+      quality: z.record(z.unknown()),
+    },
+    run: async (i) =>
+      toolResult(
+        await batsFeatures(i as Parameters<typeof batsFeatures>[0]),
+        getEnv().MAX_TOOL_RESULT_BYTES,
+      ),
+  },
+  {
+    name: "get_btc_derivatives_history",
+    title: "BTC Derivatives History",
+    description:
+      "Return venue-labelled perpetual funding, current open interest, basis, and historical OI changes where coverage exists. Does not claim global coverage.",
+    inputSchema: {
+      venues: z.array(z.enum(["hyperliquid", "binance_usdm"])).default(["hyperliquid"]),
+      windows: z
+        .array(z.enum(["5m", "15m", "1h", "4h", "24h"]))
+        .default(["5m", "15m", "1h", "4h", "24h"]),
+      maxAgeMs: z.number().int().min(1000).max(3600000).default(120000),
+    },
+    outputSchema: {
+      schemaVersion: z.string(),
+      asOf: z.string(),
+      venues: z.array(z.record(z.unknown())),
+      quality: z.record(z.unknown()),
+    },
+    run: async (i) => {
+      const snapshot = await snap(i);
+      const requested = i.venues as string[];
+      const venues = requested.map((venue) =>
+        venue === "hyperliquid"
+          ? {
+              venue: "Hyperliquid",
+              marketType: "perpetual",
+              current: snapshot.perpetual,
+              basis: null,
+              oiChanges: (i.windows as string[]).map((window) => ({
+                window,
+                value: null,
+                status: "unavailable",
+                reason: "No durable OI snapshot repository is configured",
+              })),
+              coverageStart: null,
+              globalCoverage: false,
+            }
+          : {
+              venue: "Binance USD-M",
+              marketType: "perpetual",
+              status: "unavailable",
+              reason: "Binance USD-M derivatives collector is not configured",
+              globalCoverage: false,
+            },
+      );
+      return toolResult(
+        {
+          schemaVersion: SCHEMA_VERSION,
+          asOf: snapshot.asOf,
+          venues,
+          quality: {
+            completeness: "partial",
+            missingFields: ["basis", "oiChanges"],
+            warnings: ["Historical OI requires the separately provisioned durable collector"],
+          },
+        },
+        getEnv().MAX_TOOL_RESULT_BYTES,
+      );
+    },
+  },
+  {
+    name: "get_btc_event_risk",
+    title: "BTC Event Risk",
+    description:
+      "Return structured upcoming or released macro events and material BTC news metadata. Official sources are separated from publisher interpretation.",
+    inputSchema: {
+      lookbackHours: z.number().int().min(1).max(168).default(24),
+      lookaheadHours: z.number().int().min(1).max(168).default(24),
+      timezone: z.string().default("Asia/Kuala_Lumpur"),
+      includeNews: z.boolean().default(true),
+      maxNewsItems: z.number().int().min(0).max(30).default(10),
+      maxAgeMs: z.number().int().min(1000).max(86400000).default(900000),
+    },
+    outputSchema: {
+      schemaVersion: z.string(),
+      asOf: z.string(),
+      events: z.array(z.record(z.unknown())),
+      news: z.array(z.record(z.unknown())),
+      quality: z.record(z.unknown()),
+    },
+    run: async () =>
+      toolResult(
+        {
+          schemaVersion: SCHEMA_VERSION,
+          asOf: new Date().toISOString(),
+          events: [],
+          news: [],
+          quality: {
+            completeness: "unavailable",
+            status: "unavailable",
+            missingFields: ["events", "news"],
+            warnings: [
+              "No official macro calendar or licensed BTC news provider is configured; no substitute data was fabricated",
+            ],
+          },
+        },
+        getEnv().MAX_TOOL_RESULT_BYTES,
+      ),
+  },
+  {
+    name: "get_btc_bats_context",
+    title: "BTC BATS Context",
+    description:
+      "Comprehensive timestamp-aligned BTC quantitative context for BATS analysis. Returns evidence and quality gates only; it does not produce forecasts, trade advice, or execution.",
+    inputSchema: {
+      venuePreference: z.enum(["auto", "spot_first", "perpetual_first"]).default("spot_first"),
+      includeLiquidations: z.boolean().default(true),
+      includeOptions: z.boolean().default(true),
+      includeEventRisk: z.boolean().default(true),
+      includeRawCandles: z.boolean().default(false),
+      candleLimit: z.number().int().min(50).max(500).default(300),
+      sessionProfile: z.enum(["UTC_DEFAULT", "MYT_TRADING"]).default("UTC_DEFAULT"),
+      maxCoreAgeMs: z.number().int().min(1000).max(3600000).default(120000),
+      strictCore: z.boolean().default(true),
+    },
+    outputSchema: {
+      schemaVersion: z.string(),
+      calculationVersion: z.string(),
+      asOf: z.string(),
+      market: z.literal("BTC"),
+      marketState: z.record(z.unknown()),
+      indicators: z.record(z.unknown()),
+      structure: z.record(z.unknown()),
+      levels: z.record(z.unknown()),
+      perpetual: z.record(z.unknown()),
+      oiChanges: z.array(z.record(z.unknown())),
+      liquidations: z.record(z.unknown()),
+      options: z.record(z.unknown()),
+      eventRisk: z.record(z.unknown()),
+      quality: z.record(z.unknown()),
+    },
+    run: async (i) => {
+      const input = i as Record<string, unknown>;
+      const [features, snapshot] = await Promise.all([
+        batsFeatures({
+          venue: input.venuePreference === "perpetual_first" ? "hyperliquid" : "auto",
+          limit: Number(input.candleLimit),
+          maxAgeMs: Number(input.maxCoreAgeMs),
+          strict: false,
+          includeHistory: input.includeRawCandles === true,
+        }),
+        snap({ maxAgeMs: Number(input.maxCoreAgeMs) }),
+      ]);
+      const includeLiquidations = input.includeLiquidations !== false,
+        includeOptions = input.includeOptions !== false;
+      const liquidations = includeLiquidations
+        ? (snapshot.liquidations as Record<string, unknown>)
+        : { status: "unavailable", reason: "not requested" };
+      const options = includeOptions
+        ? (snapshot.options as Record<string, unknown>)
+        : { status: "unavailable", reason: "not requested" };
+      const eventRisk = {
+        status: "unavailable",
+        events: [],
+        news: [],
+        reason: "No macro/news provider is configured",
+        source: null,
+      };
+      const quality = qualityGate(features, { liquidations, options, eventRiskAvailable: false });
+      if (input.strictCore === true && !quality.executionCriticalComplete)
+        quality.warnings.push(
+          "Strict core gate failed; evidence is returned with insufficient status",
+        );
+      const sectionTimes = Object.fromEntries(
+        Object.entries(features.sources).map(([timeframe, source]) => [
+          timeframe,
+          source.sourceTimestamp,
+        ]),
+      );
+      return toolResult(
+        {
+          schemaVersion: SCHEMA_VERSION,
+          calculationVersion: CALCULATION_VERSION,
+          asOf: features.asOf,
+          market: "BTC",
+          marketState: features.marketState,
+          indicators: features.indicators,
+          structure: features.structure,
+          levels: features.levels,
+          ...(input.includeRawCandles ? { candles: features.history ?? null } : {}),
+          perpetual: snapshot.perpetual,
+          oiChanges: [],
+          liquidations,
+          options,
+          eventRisk,
+          alignment: { targetAsOf: features.asOf, sectionSourceTimes: sectionTimes },
+          quality,
+        },
+        getEnv().MAX_TOOL_RESULT_BYTES,
+      );
+    },
+  },
   {
     name: "get_btc_intraday_snapshot",
     title: "BTC intraday snapshot",
@@ -226,7 +482,7 @@ export const tools: ToolDefinition[] = [
           lastSuccessfulFetchTimestamp: cacheInfo().fetchedAt,
           freshness: ready ? "available" : "unavailable",
           cacheStatus: cacheInfo(),
-          toolCount: 7,
+          toolCount: tools.length,
           overallReadiness: ready,
         },
         getEnv().MAX_TOOL_RESULT_BYTES,
