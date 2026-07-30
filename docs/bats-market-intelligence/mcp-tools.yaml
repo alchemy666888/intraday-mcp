@@ -1,0 +1,342 @@
+schemaVersion: "1.0.0"
+feature:
+  name: bats-market-intelligence
+  repositoryPath: docs/bats-market-intelligence
+  status: proposed
+server: intraday-market-data
+principles:
+  readOnly: true
+  structuredContent: true
+  compatibilityText: true
+  partialDataUsesFieldStatus: true
+
+tools:
+  - name: get_btc_market_history
+    title: BTC Market History
+    description: >-
+      Return normalized historical BTC OHLCV arrays for deterministic analysis.
+      This tool returns market data only and does not provide trade advice.
+    annotations:
+      readOnlyHint: true
+    inputSchema:
+      type: object
+      additionalProperties: false
+      properties:
+        venue:
+          type: string
+          enum: [auto, binance_spot, binance_usdm, hyperliquid]
+          default: auto
+        marketType:
+          type: string
+          enum: [spot, perpetual]
+          default: spot
+        timeframes:
+          type: array
+          items:
+            type: string
+            enum: [1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 1d]
+          minItems: 1
+          maxItems: 6
+          default: [5m, 15m, 1h, 4h, 1d]
+        limit:
+          type: integer
+          minimum: 50
+          maximum: 500
+          default: 300
+        closedOnly:
+          type: boolean
+          default: true
+        maxAgeMs:
+          type: integer
+          minimum: 1000
+          maximum: 3600000
+          default: 120000
+        strict:
+          type: boolean
+          default: false
+    outputSchema:
+      type: object
+      required: [schemaVersion, asOf, market, series, quality]
+      properties:
+        schemaVersion: { type: string }
+        asOf: { type: string, format: date-time }
+        market: { const: BTC }
+        series:
+          type: array
+          items:
+            type: object
+            required: [venue, marketType, timeframe, candles, source]
+            properties:
+              venue: { type: string }
+              marketType: { type: string }
+              timeframe: { type: string }
+              candles: { type: array }
+              source: { type: object }
+        quality: { type: object }
+
+  - name: get_btc_bats_features
+    title: BTC BATS Features
+    description: >-
+      Return deterministic closed-candle BATS indicators, trend state, volatility regime,
+      session VWAP, structure and reference levels. No recommendation or execution.
+    annotations:
+      readOnlyHint: true
+    inputSchema:
+      type: object
+      additionalProperties: false
+      properties:
+        venue:
+          type: string
+          enum: [auto, binance_spot, binance_usdm, hyperliquid]
+          default: auto
+        sessionProfile:
+          type: string
+          enum: [UTC_DEFAULT, MYT_TRADING]
+          default: UTC_DEFAULT
+        includeHistory:
+          type: boolean
+          default: false
+        historyPoints:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 3
+        maxAgeMs:
+          type: integer
+          minimum: 1000
+          maximum: 3600000
+          default: 120000
+        strict:
+          type: boolean
+          default: false
+    outputSchema:
+      type: object
+      required:
+        - schemaVersion
+        - calculationVersion
+        - asOf
+        - indicators
+        - marketState
+        - structure
+        - levels
+        - quality
+      properties:
+        schemaVersion: { type: string }
+        calculationVersion: { type: string }
+        asOf: { type: string, format: date-time }
+        indicators: { type: object }
+        marketState: { type: object }
+        structure: { type: object }
+        levels: { type: object }
+        history: { type: object }
+        quality: { type: object }
+
+  - name: get_btc_derivatives_history
+    title: BTC Derivatives History
+    description: >-
+      Return venue-labelled perpetual funding, basis, current open interest and historical
+      OI changes. Does not claim global coverage.
+    annotations:
+      readOnlyHint: true
+    inputSchema:
+      type: object
+      additionalProperties: false
+      properties:
+        venues:
+          type: array
+          items: { type: string, enum: [hyperliquid, binance_usdm] }
+          default: [hyperliquid]
+        windows:
+          type: array
+          items: { type: string, enum: [5m, 15m, 1h, 4h, 24h] }
+          default: [5m, 15m, 1h, 4h, 24h]
+        maxAgeMs:
+          type: integer
+          minimum: 1000
+          maximum: 3600000
+          default: 120000
+    outputSchema:
+      type: object
+      required: [schemaVersion, asOf, venues, quality]
+      properties:
+        schemaVersion: { type: string }
+        asOf: { type: string, format: date-time }
+        venues: { type: array }
+        quality: { type: object }
+
+  - name: get_btc_event_risk
+    title: BTC Event Risk
+    description: >-
+      Return structured upcoming/released macro events and material BTC news metadata.
+      Official sources are separated from publisher interpretation.
+    annotations:
+      readOnlyHint: true
+    inputSchema:
+      type: object
+      additionalProperties: false
+      properties:
+        lookbackHours:
+          type: integer
+          minimum: 1
+          maximum: 168
+          default: 24
+        lookaheadHours:
+          type: integer
+          minimum: 1
+          maximum: 168
+          default: 24
+        timezone:
+          type: string
+          default: Asia/Kuala_Lumpur
+        includeNews:
+          type: boolean
+          default: true
+        maxNewsItems:
+          type: integer
+          minimum: 0
+          maximum: 30
+          default: 10
+        maxAgeMs:
+          type: integer
+          minimum: 1000
+          maximum: 86400000
+          default: 900000
+    outputSchema:
+      type: object
+      required: [schemaVersion, asOf, events, news, quality]
+      properties:
+        schemaVersion: { type: string }
+        asOf: { type: string, format: date-time }
+        events: { type: array }
+        news: { type: array }
+        quality: { type: object }
+
+  - name: get_btc_bats_context
+    title: BTC BATS Context
+    description: >-
+      Comprehensive timestamp-aligned BTC quantitative and event context for BATS analysis.
+      Returns evidence and quality gates only; it does not produce forecasts, trade advice or execution.
+    annotations:
+      readOnlyHint: true
+    inputSchema:
+      type: object
+      additionalProperties: false
+      properties:
+        venuePreference:
+          type: string
+          enum: [auto, spot_first, perpetual_first]
+          default: spot_first
+        includeLiquidations:
+          type: boolean
+          default: true
+        includeOptions:
+          type: boolean
+          default: true
+        includeEventRisk:
+          type: boolean
+          default: true
+        includeRawCandles:
+          type: boolean
+          default: false
+        candleLimit:
+          type: integer
+          minimum: 50
+          maximum: 500
+          default: 300
+        sessionProfile:
+          type: string
+          enum: [UTC_DEFAULT, MYT_TRADING]
+          default: UTC_DEFAULT
+        maxCoreAgeMs:
+          type: integer
+          minimum: 1000
+          maximum: 3600000
+          default: 120000
+        strictCore:
+          type: boolean
+          default: true
+    outputSchema:
+      type: object
+      required:
+        - schemaVersion
+        - calculationVersion
+        - asOf
+        - market
+        - marketState
+        - indicators
+        - structure
+        - levels
+        - perpetual
+        - oiChanges
+        - liquidations
+        - options
+        - eventRisk
+        - quality
+      properties:
+        schemaVersion: { type: string }
+        calculationVersion: { type: string }
+        asOf: { type: string, format: date-time }
+        market: { const: BTC }
+        marketState: { type: object }
+        indicators: { type: object }
+        structure: { type: object }
+        levels: { type: object }
+        candles: { type: object }
+        perpetual: { type: object }
+        oiChanges: { type: array }
+        liquidations: { type: object }
+        options: { type: object }
+        eventRisk: { type: object }
+        quality:
+          type: object
+          required:
+            - executionCriticalComplete
+            - regimeCriticalComplete
+            - strategySpecificComplete
+            - optionalContextComplete
+            - completeness
+            - warnings
+          properties:
+            executionCriticalComplete: { type: boolean }
+            regimeCriticalComplete: { type: boolean }
+            strategySpecificComplete: { type: object }
+            optionalContextComplete: { type: boolean }
+            completeness:
+              type: string
+              enum: [complete, core_complete, partial, insufficient]
+            warnings: { type: array, items: { type: string } }
+
+existingToolEnhancements:
+  get_btc_intraday_snapshot:
+    preserveInputs: true
+    additiveChanges:
+      - add field-level source/quality status
+      - optionally include 4h and 1d only in a versioned schema if current enum expansion is safe
+  get_btc_timeframes:
+    preserveInputs: true
+    additiveChanges:
+      - add previous closed bars only if explicitly requested
+      - keep venue-specific semantics
+  get_btc_perpetual_context:
+    preserveInputs: true
+    additiveChanges:
+      - add basis and OI changes when history coverage exists
+  get_btc_liquidations:
+    preserveInputs: true
+    additiveChanges:
+      - add venuesCovered, globalCoverage, collectorConnected and coverageStartAt
+  get_btc_options_surface:
+    preserveInputs: true
+    additiveChanges:
+      - add stale-cache status and staleReason
+  get_btc_report_context:
+    preserveInputs: true
+    status: compact_legacy
+    preferredReplacement: get_btc_bats_context
+  get_market_data_health:
+    preserveInputs: true
+    additiveChanges:
+      - provider-level circuits
+      - storage and collector health
+      - feature calculation health
+      - completeness rolling metrics
