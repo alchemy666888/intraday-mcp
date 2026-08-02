@@ -1,6 +1,6 @@
 # Design: REST Market Data Completeness
 
-Status: Draft
+Status: Approved
 
 ## Design goals
 
