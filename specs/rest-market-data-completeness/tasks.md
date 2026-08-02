@@ -1,6 +1,6 @@
 # Tasks: REST Market Data Completeness
 
-Status: APPROVE
+Status: Approved
 
 ## Execution rules
 
@@ -23,7 +23,7 @@ Status: APPROVE
 
 ### TASK-001 — Establish configuration and contract guardrails
 
-Status: APPROVE
+Status: Blocked
 
 Requirements: REQ-F-002, REQ-F-020, REQ-F-023, REQ-F-024, REQ-NF-004, REQ-NF-005,
 REQ-NF-006
@@ -66,7 +66,13 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Preflight on 2026-08-02 confirmed the 15-second MCP route limit, no database/storage runtime
+  dependency or environment variable, and the pre-enhancement source/version baseline.
+- Blocked before implementation: `npm ci` failed with `E403 Forbidden` while retrieving
+  `@eslint/js`, leaving dependencies unavailable. Consequently `npm test`, `npm run typecheck`,
+  and `npm run lint` failed because required packages could not be resolved, so reliable task
+  verification is impossible. The repository also has no configured Git remote, which will
+  prevent the required branch push and draft pull request after verification.
 
 ### TASK-002 — Replace the singleton cache with bounded keyed ephemeral state
 
