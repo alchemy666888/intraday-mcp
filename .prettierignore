@@ -1,0 +1,17 @@
+# Approved documents and pre-existing files retained byte-for-byte.
+specs/rest-market-data-completeness/requirements.md
+specs/rest-market-data-completeness/design.md
+docs/bats-market-intelligence/*.md
+vibe-coding-prompt.md
+app/api/healthz/route.ts
+app/api/readyz/route.ts
+app/page.tsx
+eslint.config.js
+src/schemas/upstream-v2.ts
+src/security/auth.ts
+src/utils/errors.ts
+src/utils/finite-number.ts
+src/utils/timestamps.ts
+test/unit/binance-timeframes-client.test.ts
+tsconfig.json
+vercel.json
