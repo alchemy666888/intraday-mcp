@@ -11,6 +11,7 @@ import { cacheInfo } from "@/cache/ephemeral-cache";
 import { BATS_TIMEFRAMES } from "@/domain/market-data";
 import { marketHistory, batsFeatures, qualityGate } from "@/services/bats-service";
 import { CALCULATION_VERSION, SCHEMA_VERSION } from "@/domain/quality";
+import { fetchDirectMarketData } from "@/services/direct-market-data-service";
 const tfEnum = z.enum(["5m", "15m", "1h"]);
 const timeframes = z.array(tfEnum).default(["5m", "15m", "1h"]);
 const barSelection = z.enum(["current", "closed", "both"]).default("both");
@@ -46,8 +47,20 @@ export function filterTimeframesForRequest(
 async function snap(input: { maxAgeMs?: number }, options: { enrichTimeframes?: boolean } = {}) {
   const env = getEnv();
   const max = input.maxAgeMs ?? env.MAX_ACCEPTABLE_DATA_AGE_MS;
-  const r = await fetchMarketData(max);
+  const [r, direct] = await Promise.all([
+    fetchMarketData(max),
+    fetchDirectMarketData({
+      spot: true,
+      timeframes: !!options.enrichTimeframes,
+      perpetual: true,
+      liquidations: true,
+      options: true,
+      sessionProfile: "UTC_DEFAULT",
+      maxAgeMs: max,
+    }),
+  ]);
   const snapshot = normalize(r.payload, r.meta, max);
+  Object.assign(snapshot, direct);
   if (options.enrichTimeframes) {
     const fallback = await fetchBinanceTimeframeFallback(max);
     return mergeBinanceTimeframeFallback(snapshot, fallback);
@@ -296,6 +309,7 @@ export const tools: ToolDefinition[] = [
           levels: features.levels,
           ...(input.includeRawCandles ? { candles: features.history ?? null } : {}),
           perpetual: snapshot.perpetual,
+          spot: (snapshot as typeof snapshot & { spot?: unknown }).spot,
           oiChanges: [],
           liquidations,
           options,

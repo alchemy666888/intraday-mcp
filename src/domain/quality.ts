@@ -1,5 +1,5 @@
-export const SCHEMA_VERSION = "1.0.0";
-export const CALCULATION_VERSION = "bats-1.0.0";
+export const SCHEMA_VERSION = "1.1.0";
+export const CALCULATION_VERSION = "bats-1.1.0";
 
 export type BatsQuality = {
   executionCriticalComplete: boolean;

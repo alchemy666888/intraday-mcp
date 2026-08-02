@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const SERVICE = "btc-intraday-market-data";
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 const schema = z.object({
   MARKET_DATA_API_URL: z.string().url().default("https://alchemy666888.vercel.app/api/hyperliquid"),
   MARKET_DATA_PROFILE: z.string().default("btc-intraday"),
@@ -16,11 +16,15 @@ const schema = z.object({
   ALLOWED_HOSTS: z.string().optional(),
   ALLOWED_ORIGINS: z.string().optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  COINALYZE_API_KEY: z.string().min(1).optional(),
+  COINALYZE_LIQUIDATION_SYMBOLS: z.string().optional(),
+  DIRECT_PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(500).max(4000).default(4000),
 });
 export type Env = z.infer<typeof schema>;
 export function getEnv(): Env {
   const env = schema.parse(process.env);
-  if (env.AUTH_MODE === "bearer" && !env.MCP_BEARER_TOKEN) throw new Error("MCP_BEARER_TOKEN is required");
+  if (env.AUTH_MODE === "bearer" && !env.MCP_BEARER_TOKEN)
+    throw new Error("MCP_BEARER_TOKEN is required");
   return env;
 }
 export function upstreamUrl(env = getEnv()): string {

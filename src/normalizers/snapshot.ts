@@ -194,11 +194,12 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
     calculatedFields: ["fundingAprSimple", "openInterestUsd"],
   };
   const liqRoot = obj(btc.liquidations);
+  // Canonical liquidation payloads are deliberately ignored. Coinalyze is the sole source.
   const liquidations = Object.fromEntries(
     tfs.map((w) => {
-      const o = obj(liqRoot[w]);
-      const long = num(o, "longLiquidationUsd", "longUsd");
-      const short = num(o, "shortLiquidationUsd", "shortUsd");
+      const o = {} as Obj;
+      const long = null;
+      const short = null;
       return [
         w,
         {
@@ -208,21 +209,21 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
             asOf,
             receivedAt,
             maxAgeMs,
-            enriched && Object.keys(o).length > 0,
+            false,
           ),
           window: w,
           exactness: "upstream aggregate",
-          collectorConnected: liqRoot.collectorConnected ?? null,
-          collectorLastEventAt: validIso(liqRoot.collectorLastEventAt) ?? null,
-          coverageStartAt: validIso(liqRoot.coverageStartAt) ?? null,
+          collectorConnected: null,
+          collectorLastEventAt: null,
+          coverageStartAt: null,
           longLiquidationUsd: long,
           shortLiquidationUsd: short,
           totalLiquidationUsd:
             num(o, "totalLiquidationUsd", "totalUsd") ??
             (long !== null && short !== null ? long + short : null),
-          eventCount: num(o, "eventCount", "count"),
-          largestLiquidationUsd: num(o, "largestLiquidationUsd"),
-          lastEventAt: validIso(o.lastEventAt) ?? null,
+          eventCount: null,
+          largestLiquidationUsd: null,
+          lastEventAt: null,
         },
       ];
     }),
@@ -277,6 +278,7 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
   const enrichedSectionCompleteness = {
     timeframes: Object.keys(tfRoot).length > 0,
     perpetual: Object.keys(p).length > 0,
+    // Preserve the legacy completeness label for compatibility, without consuming its values.
     liquidations: Object.keys(liqRoot).length > 0,
     options: expiries.length > 0,
   };
@@ -287,7 +289,7 @@ export function normalize(up: UpstreamAny, fm: FetchMeta, maxAgeMs: number) {
       : "partial-enriched"
     : "legacy-only";
   return {
-    schemaVersion: "1.0.0",
+    schemaVersion: "1.1.0",
     asOf,
     receivedAt,
     status: enriched ? statusFor(ageMs(asOf, receivedAt), maxAgeMs, true) : "partial",

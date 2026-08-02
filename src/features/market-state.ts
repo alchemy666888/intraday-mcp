@@ -2,15 +2,12 @@ import type { Candle, CandleSeries } from "@/domain/market-data";
 import { indicators } from "@/features/indicators";
 
 export function sessionVwap(candles: Candle[], anchor: Date) {
-  const selected = candles.filter(
-    (candle) => candle.isClosed && Date.parse(candle.openTime) >= anchor.getTime(),
-  );
+  const selected = candles.filter((candle) => Date.parse(candle.openTime) >= anchor.getTime());
   let volume = 0,
     value = 0;
   for (const candle of selected) {
-    const typical = (candle.high + candle.low + candle.close) / 3;
     volume += candle.baseVolume;
-    value += typical * candle.baseVolume;
+    if (candle.quoteVolume !== null) value += candle.quoteVolume;
   }
   const vwap = volume > 0 ? value / volume : null;
   const latest = selected.at(-1)?.close ?? null;
@@ -20,8 +17,16 @@ export function sessionVwap(candles: Candle[], anchor: Date) {
     deviationPct: vwap && latest ? ((latest - vwap) / vwap) * 100 : null,
     completeFromAnchor:
       selected.length > 0 && Date.parse(selected[0].openTime) === anchor.getTime(),
-    method: "typical_price_x_base_volume",
+    method: "sum_quote_volume_divided_by_sum_base_volume",
     sourceBars: selected.length,
+    lastIncludedBarTime: selected.at(-1)?.openTime ?? null,
+    currentBarIncluded: selected.some((candle) => !candle.isClosed),
+    reason:
+      volume === 0
+        ? "zero_base_volume"
+        : selected.some((c) => c.quoteVolume === null)
+          ? "missing_quote_volume"
+          : null,
   };
 }
 

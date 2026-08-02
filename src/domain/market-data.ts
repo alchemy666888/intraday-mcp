@@ -50,3 +50,37 @@ export const timeframeMs: Record<BatsTimeframe, number> = {
   "4h": 14_400_000,
   "1d": 86_400_000,
 };
+
+export type ProviderStatus = "live" | "stale" | "partial" | "unavailable" | "error";
+export type ProviderCacheStatus = "miss" | "hit" | "stale-if-error" | "not-used";
+export type ProviderEnvelope<T> = {
+  data: T | null;
+  source: string | null;
+  venue: string;
+  marketType: "spot" | "perpetual" | "option" | "aggregate";
+  method: string;
+  sourceTimestamp: string | null;
+  observedAt: string;
+  receivedAt: string;
+  ageMs: number | null;
+  status: ProviderStatus;
+  cacheStatus: ProviderCacheStatus;
+  fallback: boolean;
+  reason: string | null;
+  warnings: string[];
+};
+export type DirectSectionPlan = {
+  spot: boolean;
+  timeframes: boolean;
+  perpetual: boolean;
+  liquidations: boolean;
+  options: boolean;
+  sessionProfile: "UTC_DEFAULT" | "MYT_TRADING";
+  maxAgeMs: number;
+  optionsInput?: {
+    maxExpiries: number;
+    includeStrikes: boolean;
+    maxStrikesPerExpiry: number;
+    minimumOpenInterest: number;
+  };
+};

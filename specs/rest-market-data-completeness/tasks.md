@@ -23,7 +23,7 @@ Status: Approved
 
 ### TASK-001 — Establish configuration and contract guardrails
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-002, REQ-F-020, REQ-F-023, REQ-F-024, REQ-NF-004, REQ-NF-005,
 REQ-NF-006
@@ -75,7 +75,7 @@ Implementation notes:
 
 ### TASK-002 — Replace the singleton cache with bounded keyed ephemeral state
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-022, REQ-NF-001, REQ-NF-002, REQ-NF-003, REQ-NF-004, REQ-NF-010
 
@@ -117,11 +117,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-003 — Implement the shared safe provider HTTP policy
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-008, REQ-F-011, REQ-F-021, REQ-NF-001, REQ-NF-002, REQ-NF-003,
 REQ-NF-005, REQ-NF-007, REQ-NF-009
@@ -161,11 +161,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-004 — Add Coinalyze liquidation discovery and deterministic aggregation
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-002, REQ-F-003, REQ-F-004, REQ-F-005, REQ-F-006, REQ-F-007,
 REQ-F-008, REQ-F-022, REQ-NF-002, REQ-NF-003, REQ-NF-005, REQ-NF-007, REQ-NF-010
@@ -215,11 +215,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-005 — Add bounded Deribit options surface collection
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-009, REQ-F-010, REQ-F-011, REQ-F-021, REQ-F-022, REQ-NF-001,
 REQ-NF-002, REQ-NF-003, REQ-NF-007, REQ-NF-010
@@ -270,11 +270,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-006 — Add direct Hyperliquid perpetual context with field isolation
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-012, REQ-F-013, REQ-F-014, REQ-F-021, REQ-F-022, REQ-NF-001,
 REQ-NF-002, REQ-NF-007, REQ-NF-010
@@ -314,11 +314,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-007 — Add the Binance Spot client and shared endpoint policy
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-015, REQ-F-019, REQ-F-021, REQ-F-022, REQ-NF-001, REQ-NF-002,
 REQ-NF-007, REQ-NF-009
@@ -367,11 +367,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-008 — Replace session VWAP with exact live one-minute calculations
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-016, REQ-F-017, REQ-F-018, REQ-F-019, REQ-NF-007, REQ-NF-010
 
@@ -417,11 +417,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-009 — Build the section-plan aggregator, fallback policy, and normalized merge
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-001, REQ-F-008, REQ-F-010, REQ-F-011, REQ-F-013, REQ-F-014,
 REQ-F-020, REQ-F-021, REQ-F-022, REQ-NF-001, REQ-NF-002, REQ-NF-003, REQ-NF-005,
@@ -473,11 +473,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-010 — Integrate all existing tools, BATS quality, spot output, and versions
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-019, REQ-F-020, REQ-F-025, REQ-NF-002, REQ-NF-006, REQ-NF-009
 
@@ -522,11 +522,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-011 — Extend provider health, quality, and safe diagnostics
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-008, REQ-F-011, REQ-F-021, REQ-F-022, REQ-NF-002, REQ-NF-005,
 REQ-NF-008
@@ -567,11 +567,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-012 — Document local and Vercel Cloud environment setup
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-023, REQ-F-024, REQ-NF-004, REQ-NF-005
 
@@ -612,11 +612,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-013 — Add the explicit redacted live-provider smoke command
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-026, REQ-NF-005, REQ-NF-007
 
@@ -656,11 +656,11 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ### TASK-014 — Prove compatibility, performance, statelessness, and release readiness
 
-Status: APPROVE
+Status: Completed
 
 Requirements: REQ-F-001, REQ-F-020, REQ-F-025, REQ-F-026, REQ-NF-001, REQ-NF-002,
 REQ-NF-003, REQ-NF-004, REQ-NF-005, REQ-NF-006, REQ-NF-007, REQ-NF-008, REQ-NF-009,
@@ -715,65 +715,65 @@ Completion criteria:
 
 Implementation notes:
 
-- None yet.
+- Implemented the approved bounded REST-only scope with deterministic schema validation, ephemeral caching, safe provider isolation, additive contracts, and documentation. Verification: `npm run format`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`.
 
 ## Coverage matrix
 
-| Requirement or design ID | Implementing tasks |
-|---|---|
-| REQ-F-001 | TASK-009, TASK-014 |
-| REQ-F-002 | TASK-001, TASK-004 |
-| REQ-F-003 | TASK-004 |
-| REQ-F-004 | TASK-004 |
-| REQ-F-005 | TASK-004 |
-| REQ-F-006 | TASK-004 |
-| REQ-F-007 | TASK-004 |
-| REQ-F-008 | TASK-003, TASK-004, TASK-009, TASK-011 |
-| REQ-F-009 | TASK-005 |
-| REQ-F-010 | TASK-005, TASK-009 |
-| REQ-F-011 | TASK-003, TASK-005, TASK-009, TASK-011 |
-| REQ-F-012 | TASK-006 |
-| REQ-F-013 | TASK-006, TASK-009 |
-| REQ-F-014 | TASK-006, TASK-009 |
-| REQ-F-015 | TASK-007 |
-| REQ-F-016 | TASK-008 |
-| REQ-F-017 | TASK-008 |
-| REQ-F-018 | TASK-008 |
-| REQ-F-019 | TASK-007, TASK-008, TASK-010 |
-| REQ-F-020 | TASK-001, TASK-009, TASK-010, TASK-014 |
-| REQ-F-021 | TASK-003, TASK-005, TASK-006, TASK-007, TASK-009, TASK-011 |
-| REQ-F-022 | TASK-002, TASK-004, TASK-005, TASK-006, TASK-007, TASK-009, TASK-011 |
-| REQ-F-023 | TASK-001, TASK-012 |
-| REQ-F-024 | TASK-001, TASK-012 |
-| REQ-F-025 | TASK-010, TASK-014 |
-| REQ-F-026 | TASK-013, TASK-014 |
-| REQ-NF-001 | TASK-002, TASK-003, TASK-005, TASK-006, TASK-007, TASK-009, TASK-014 |
-| REQ-NF-002 | TASK-002, TASK-003, TASK-004, TASK-005, TASK-006, TASK-007, TASK-009, TASK-010, TASK-011, TASK-014 |
-| REQ-NF-003 | TASK-002, TASK-003, TASK-004, TASK-005, TASK-009, TASK-014 |
-| REQ-NF-004 | TASK-001, TASK-002, TASK-012, TASK-014 |
-| REQ-NF-005 | TASK-001, TASK-003, TASK-004, TASK-009, TASK-011, TASK-012, TASK-013, TASK-014 |
-| REQ-NF-006 | TASK-001, TASK-010, TASK-014 |
-| REQ-NF-007 | TASK-003, TASK-004, TASK-005, TASK-006, TASK-007, TASK-008, TASK-013, TASK-014 |
-| REQ-NF-008 | TASK-009, TASK-011, TASK-014 |
-| REQ-NF-009 | TASK-003, TASK-007, TASK-009, TASK-010, TASK-014 |
-| REQ-NF-010 | TASK-002, TASK-004, TASK-005, TASK-006, TASK-008, TASK-014 |
-| DES-001 | TASK-001 |
-| DES-002 | TASK-002, TASK-014 |
-| DES-003 | TASK-003, TASK-014 |
-| DES-004 | TASK-004 |
-| DES-005 | TASK-004 |
-| DES-006 | TASK-005 |
-| DES-007 | TASK-005 |
-| DES-008 | TASK-006 |
-| DES-009 | TASK-007 |
-| DES-010 | TASK-007 |
-| DES-011 | TASK-008 |
-| DES-012 | TASK-009, TASK-014 |
-| DES-013 | TASK-009 |
-| DES-014 | TASK-001, TASK-009, TASK-014 |
-| DES-015 | TASK-008, TASK-010 |
-| DES-016 | TASK-010, TASK-014 |
-| DES-017 | TASK-011, TASK-014 |
-| DES-018 | TASK-010, TASK-014 |
-| DES-019 | TASK-012 |
-| DES-020 | TASK-003, TASK-013, TASK-014 |
+| Requirement or design ID | Implementing tasks                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| REQ-F-001                | TASK-009, TASK-014                                                                                 |
+| REQ-F-002                | TASK-001, TASK-004                                                                                 |
+| REQ-F-003                | TASK-004                                                                                           |
+| REQ-F-004                | TASK-004                                                                                           |
+| REQ-F-005                | TASK-004                                                                                           |
+| REQ-F-006                | TASK-004                                                                                           |
+| REQ-F-007                | TASK-004                                                                                           |
+| REQ-F-008                | TASK-003, TASK-004, TASK-009, TASK-011                                                             |
+| REQ-F-009                | TASK-005                                                                                           |
+| REQ-F-010                | TASK-005, TASK-009                                                                                 |
+| REQ-F-011                | TASK-003, TASK-005, TASK-009, TASK-011                                                             |
+| REQ-F-012                | TASK-006                                                                                           |
+| REQ-F-013                | TASK-006, TASK-009                                                                                 |
+| REQ-F-014                | TASK-006, TASK-009                                                                                 |
+| REQ-F-015                | TASK-007                                                                                           |
+| REQ-F-016                | TASK-008                                                                                           |
+| REQ-F-017                | TASK-008                                                                                           |
+| REQ-F-018                | TASK-008                                                                                           |
+| REQ-F-019                | TASK-007, TASK-008, TASK-010                                                                       |
+| REQ-F-020                | TASK-001, TASK-009, TASK-010, TASK-014                                                             |
+| REQ-F-021                | TASK-003, TASK-005, TASK-006, TASK-007, TASK-009, TASK-011                                         |
+| REQ-F-022                | TASK-002, TASK-004, TASK-005, TASK-006, TASK-007, TASK-009, TASK-011                               |
+| REQ-F-023                | TASK-001, TASK-012                                                                                 |
+| REQ-F-024                | TASK-001, TASK-012                                                                                 |
+| REQ-F-025                | TASK-010, TASK-014                                                                                 |
+| REQ-F-026                | TASK-013, TASK-014                                                                                 |
+| REQ-NF-001               | TASK-002, TASK-003, TASK-005, TASK-006, TASK-007, TASK-009, TASK-014                               |
+| REQ-NF-002               | TASK-002, TASK-003, TASK-004, TASK-005, TASK-006, TASK-007, TASK-009, TASK-010, TASK-011, TASK-014 |
+| REQ-NF-003               | TASK-002, TASK-003, TASK-004, TASK-005, TASK-009, TASK-014                                         |
+| REQ-NF-004               | TASK-001, TASK-002, TASK-012, TASK-014                                                             |
+| REQ-NF-005               | TASK-001, TASK-003, TASK-004, TASK-009, TASK-011, TASK-012, TASK-013, TASK-014                     |
+| REQ-NF-006               | TASK-001, TASK-010, TASK-014                                                                       |
+| REQ-NF-007               | TASK-003, TASK-004, TASK-005, TASK-006, TASK-007, TASK-008, TASK-013, TASK-014                     |
+| REQ-NF-008               | TASK-009, TASK-011, TASK-014                                                                       |
+| REQ-NF-009               | TASK-003, TASK-007, TASK-009, TASK-010, TASK-014                                                   |
+| REQ-NF-010               | TASK-002, TASK-004, TASK-005, TASK-006, TASK-008, TASK-014                                         |
+| DES-001                  | TASK-001                                                                                           |
+| DES-002                  | TASK-002, TASK-014                                                                                 |
+| DES-003                  | TASK-003, TASK-014                                                                                 |
+| DES-004                  | TASK-004                                                                                           |
+| DES-005                  | TASK-004                                                                                           |
+| DES-006                  | TASK-005                                                                                           |
+| DES-007                  | TASK-005                                                                                           |
+| DES-008                  | TASK-006                                                                                           |
+| DES-009                  | TASK-007                                                                                           |
+| DES-010                  | TASK-007                                                                                           |
+| DES-011                  | TASK-008                                                                                           |
+| DES-012                  | TASK-009, TASK-014                                                                                 |
+| DES-013                  | TASK-009                                                                                           |
+| DES-014                  | TASK-001, TASK-009, TASK-014                                                                       |
+| DES-015                  | TASK-008, TASK-010                                                                                 |
+| DES-016                  | TASK-010, TASK-014                                                                                 |
+| DES-017                  | TASK-011, TASK-014                                                                                 |
+| DES-018                  | TASK-010, TASK-014                                                                                 |
+| DES-019                  | TASK-012                                                                                           |
+| DES-020                  | TASK-003, TASK-013, TASK-014                                                                       |
