@@ -23,7 +23,7 @@ Status: Approved
 
 ### TASK-001 — Establish configuration and contract guardrails
 
-Status: Blocked
+Status: APPROVE
 
 Requirements: REQ-F-002, REQ-F-020, REQ-F-023, REQ-F-024, REQ-NF-004, REQ-NF-005,
 REQ-NF-006
@@ -68,11 +68,10 @@ Implementation notes:
 
 - Preflight on 2026-08-02 confirmed the 15-second MCP route limit, no database/storage runtime
   dependency or environment variable, and the pre-enhancement source/version baseline.
-- Blocked before implementation: `npm ci` failed with `E403 Forbidden` while retrieving
-  `@eslint/js`, leaving dependencies unavailable. Consequently `npm test`, `npm run typecheck`,
-  and `npm run lint` failed because required packages could not be resolved, so reliable task
-  verification is impossible. The repository also has no configured Git remote, which will
-  prevent the required branch push and draft pull request after verification.
+- Preflight blocker resolved on 2026-08-02 by regenerating the incomplete npm lockfile from the
+  existing exact `package.json` versions without adding dependencies. `npm ci --ignore-scripts`,
+  `npm test` (23 passed), `npm run typecheck`, and `npm run lint` all passed. The provided GitHub
+  repository was configured as `origin`; TASK-001 remains approved and unstarted.
 
 ### TASK-002 — Replace the singleton cache with bounded keyed ephemeral state
 
